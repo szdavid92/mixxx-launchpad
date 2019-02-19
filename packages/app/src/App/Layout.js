@@ -1,11 +1,10 @@
 /* @flow */
 import { assign, isEqual, findIndex } from 'lodash-es'
 
-import { channelControls } from '@mixxx-launchpad/mixxx'
-
 import Grande from './presets/Grande'
 import Juggler from './presets/Juggler'
 import Sampler from './presets/Sampler'
+import SamplerPalette from './presets/SamplerPalette'
 import Short from './presets/Short'
 import Tall from './presets/Tall'
 import MidiComponent from '../Controls/MidiComponent'
@@ -112,7 +111,7 @@ class SelectorBar extends MidiComponent {
         this.bindings[block.channel][0].button.sendColor(this.device.colors.hi_green)
       }
       this.mountedPresets[block.channel] =
-        makePresetFromPartialTemplate(`${this.id}.deck.${block.channel}`, cycled[block.size][block.index], block.offset)(channelControls[block.channel])(this.controlComponentBuilder)(this.midibus)(this.modifier)
+        makePresetFromPartialTemplate(`${this.id}.deck.${block.channel}`, cycled[block.size][block.index], block.offset, block.channel)(this.controlComponentBuilder)(this.midibus)(this.modifier)
       this.mountedPresets[block.channel].mount()
     })
   }
@@ -136,14 +135,15 @@ class SelectorBar extends MidiComponent {
   }
 
   addToChord (channel: number) {
+    const layout = this.getLayout()
     if (this.chord.length === 4) {
       const rem = this.chord.shift()
-      const found = findIndex(this.layout, (b) => b.channel === rem)
+      const found = findIndex(layout, (b) => b.channel === rem)
       if (found === -1) {
         this.bindings[rem][0].button.sendColor(this.device.colors.black)
       } else {
-        const layout = this.layout[found]
-        if (layout.index) {
+        const block = layout[found]
+        if (block.index) {
           this.bindings[rem][0].button.sendColor(this.device.colors.hi_orange)
         } else {
           this.bindings[rem][0].button.sendColor(this.device.colors.hi_green)
@@ -202,7 +202,7 @@ const offsets = [
 const presets = {
   grande: [ Grande ],
   tall: [ Tall, Juggler ],
-  short: [ Short, Sampler ]
+  short: [ Short, Sampler, SamplerPalette ]
 }
 
 const cycled = {
@@ -224,14 +224,14 @@ const reorganize = (current: Block[], selectedChannels: number[]): Diff => {
       ]
       case 3: return [
         { offset: offsets[0], size: 'tall', channel: chs[0], index: 0 },
-        { offset: offsets[1], size: 'short', channel: chs[1], index: 0 },
-        { offset: offsets[3], size: 'short', channel: chs[2], index: 0 }
+        { offset: offsets[3], size: 'short', channel: chs[1], index: 0 },
+        { offset: offsets[1], size: 'short', channel: chs[2], index: 0 }
       ]
       default: return [
         { offset: offsets[2], size: 'short', channel: chs[0], index: 0 },
         { offset: offsets[3], size: 'short', channel: chs[1], index: 0 },
-        { offset: offsets[2], size: 'short', channel: chs[2], index: 0 },
-        { offset: offsets[3], size: 'short', channel: chs[3], index: 0 }
+        { offset: offsets[0], size: 'short', channel: chs[2], index: 0 },
+        { offset: offsets[1], size: 'short', channel: chs[3], index: 0 }
       ]
     }
   })(selectedChannels)
